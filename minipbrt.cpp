@@ -5905,6 +5905,7 @@ namespace minipbrt {
           delete loopsubdiv;
           return false;
         }
+        loopsubdiv->num_points /= 3;
         shape = loopsubdiv;
       }
       break;

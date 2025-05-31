@@ -3250,6 +3250,7 @@ namespace minipbrt {
 
     bool string_param(const char* name, char** dest, bool copy=false);
     bool string_param_with_default(const char* name, char** dest, const char* defaultVal, bool copy=false);
+    bool string_array_param(const char* name, uint32_t len, char** dest, bool copy=false);
     bool filename_param(const char* name, char** dest);
     bool bool_param(const char* name, bool* dest);
     bool bool_param_with_default(const char* name, bool* dest, bool defaultVal);
@@ -6979,11 +6980,20 @@ namespace minipbrt {
         MixMaterial* mix = new MixMaterial();
         color_texture_param("amount", &mix->amount);
         float_texture_param("amount", &mix->famount); // PBRT v4
-        if (string_param("namedmaterial1", &tmp)) {
-          mix->namedmaterial1 = find_material(tmp);
+
+        char * tmpMaterials[2];
+        if (string_array_param("materials", 2, tmpMaterials)) { // PBRT v4
+          mix->namedmaterial1 = find_material(tmpMaterials[0]);
+          mix->namedmaterial2 = find_material(tmpMaterials[1]);
         }
-        if (string_param("namedmaterial2", &tmp)) {
-          mix->namedmaterial2 = find_material(tmp);
+        else
+        {
+            if (string_param("namedmaterial1", &tmp)) {
+              mix->namedmaterial1 = find_material(tmp);
+            }
+            if (string_param("namedmaterial2", &tmp)) {
+              mix->namedmaterial2 = find_material(tmp);
+            }
         }
         material = mix;
       }
@@ -7204,6 +7214,8 @@ namespace minipbrt {
     }
 
     texture_param("bumpmap", TextureData::Float, &material->bumpmap);
+    texture_param("displacement", TextureData::Float, &material->displacement); // PBRTv4
+    string_param("normalmap", &material->normalmap, true); // PBRTv4
 
     if (materialName != nullptr) {
       material->name = copy_string(materialName);
@@ -7346,6 +7358,17 @@ namespace minipbrt {
         const MixMaterial* src = dynamic_cast<const MixMaterial*>(baseMaterial);
         MixMaterial* dst = new MixMaterial();
         color_texture_param_with_default("amount", &dst->amount, &src->amount);
+
+        char * tmpMaterials[2];
+        if (string_array_param("materials", 2, tmpMaterials)) { // PBRT v4
+          dst->namedmaterial1 = find_material(tmpMaterials[0]);
+          dst->namedmaterial2 = find_material(tmpMaterials[1]);
+        }
+        else
+        {
+          dst->namedmaterial1 = src->namedmaterial1;
+          dst->namedmaterial2 = src->namedmaterial2;
+        }
 
         char* tmp = nullptr;
         if (string_param("namedmaterial1", &tmp)) {
@@ -7562,6 +7585,14 @@ namespace minipbrt {
       material->bumpmap = baseMaterial->bumpmap;
     }
 
+    if(!texture_param("displacement", TextureData::Float, &material->displacement)) { // PBRTv4
+        material->displacement = baseMaterial->displacement;
+    }
+    
+    if(!string_param("normalmap", &material->normalmap, true)) { // PBRTv4
+        material->normalmap = copy_string(baseMaterial->normalmap);
+    }
+
     if (baseMaterial->name != nullptr)
         material->name = copy_string(baseMaterial->name);
 
@@ -7616,8 +7647,10 @@ namespace minipbrt {
       return find_param("bsdffile", ParamType::String);
 
     case MaterialType::Mix:
-      return find_param("namedmaterial1", ParamType::String) ||
-             find_param("namedmaterial2", ParamType::String);
+      return 
+          find_param("materials", ParamType::String) || // PBRTv4
+          find_param("namedmaterial1", ParamType::String) ||
+          find_param("namedmaterial2", ParamType::String);
 
     case MaterialType::Subsurface:
       return find_param("name", ParamType::String);
@@ -7856,6 +7889,9 @@ namespace minipbrt {
     case TextureType::Scale:
       {
         ScaleTexture* scale = new ScaleTexture();
+        
+        color_texture_param("tex", &scale->tex); // PBRTv4
+        float_texture_param("scale", &scale->scale); // PBRTv4
         color_texture_param("tex1", &scale->tex1);
         color_texture_param("tex2", &scale->tex2);
         texture = scale;
@@ -8884,6 +8920,42 @@ namespace minipbrt {
     return true;
   }
 
+  bool Parser::string_array_param(const char* name, uint32_t len, char** dest, bool copy)
+  {
+    assert(name != nullptr);
+    assert(dest != nullptr);
+
+    const ParamInfo* paramDesc = find_param(name, ParamType::String);
+    if (paramDesc == nullptr || paramDesc->count != len) {
+      return false;
+    }
+
+    char* src = reinterpret_cast<char*>(m_temp.data() + paramDesc->offset);
+    for(uint32_t i = 0; i < len; ++i)
+    {
+        if (copy && dest[i] != nullptr) {
+          delete[] dest[i];
+        }
+
+        size_t len = std::strlen(src);
+
+        if(copy)
+        {
+            char* dst = new char[len + 1];
+            std::memcpy(dst, src, sizeof(char) * len);
+            dst[len] = '\0';
+            dest[i] = dst;
+        }
+        else
+        {
+            dest[i] = src;
+        }
+
+        src += len+1;
+    }
+
+    return true;
+  }
 
   bool Parser::string_param_with_default(const char* name, char** dest, const char* defaultVal, bool copy)
   {
@@ -9169,6 +9241,8 @@ namespace minipbrt {
     bool hasTex = texture_param(name, TextureData::Spectrum, &dest->texture);
     bool hasValue = spectrum_param(name, dest->value);
     bool hasSPDEnum = spd_enum_string_param(name, &dest->spdEnum, true);
+    if(!hasSPDEnum)
+        dest->spdEnum = nullptr;
     return hasTex | hasValue | hasSPDEnum;
   }
 

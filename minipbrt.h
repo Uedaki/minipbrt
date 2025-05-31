@@ -738,6 +738,8 @@ namespace minipbrt {
   struct Material {
     const char* name = nullptr;
     uint32_t bumpmap = kInvalidIndex;
+    uint32_t displacement = kInvalidIndex; // PBRTv4
+    char* normalmap = nullptr; // PBRTv4
 
     virtual ~Material() {}
     virtual MaterialType type() const = 0;
@@ -1598,8 +1600,11 @@ namespace minipbrt {
 
 
   struct ScaleTexture : public TextureAnyD {
+
     ColorTex tex1 = { kInvalidIndex, {1.0f, 1.0f, 1.0f} };
     ColorTex tex2 = { kInvalidIndex, {0.0f, 0.0f, 0.0f} };
+    ColorTex tex   = { kInvalidIndex, {1.0f, 1.0f, 1.0f} }; // PBRTv4
+    FloatTex scale = { kInvalidIndex, 1.f }; // PBRTv4
 
     virtual ~ScaleTexture() override {}
     virtual TextureType type() const override { return TextureType::Scale; }

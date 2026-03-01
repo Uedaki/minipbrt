@@ -3268,8 +3268,8 @@ namespace minipbrt {
     bool float_texture_param_with_default(const char* name, FloatTex* dest, const FloatTex* defaultVal);
     bool color_texture_param_with_default(const char *name, ColorTex *dest, const ColorTex* defaultVal);
     bool enum_param(const char* name, const char* values[], int* dest);
-    bool spd_enum_string_param(const char* name, char** dest, bool copy=false);
-    bool spd_enum_string_param_with_default(const char* name, char** dest, const char* defaultVal, bool copy=false);
+    bool spd_enum_string_param(const char* name, const char** dest, bool copy=false);
+    bool spd_enum_string_param_with_default(const char* name, const char** dest, const char* defaultVal, bool copy=false);
 
     template <class T>
     bool typed_enum_param(const char* name, const char* values[], T* dest) {
@@ -5758,19 +5758,23 @@ namespace minipbrt {
       m_error = nullptr;
     }
 
-    FileData* fdata = &m_fileData[m_includeDepth];
-    int64_t errorOffset = fdata->bufOffset + static_cast<int64_t>(m_pos - m_buf);
-
     char* errorMessage = new char[size_t(len + 1)];
     va_start(args, fmt);
     vsnprintf(errorMessage, size_t(len + 1), fmt, args);
     va_end(args);
 
-    m_error = new Error(fdata->filename, errorOffset, errorMessage);
+    if (m_fileData)
+    {
+      FileData* fdata = &m_fileData[m_includeDepth];
+      int64_t errorOffset = fdata->bufOffset + static_cast<int64_t>(m_pos - m_buf);
+      m_error = new Error(fdata->filename, errorOffset, errorMessage);
 
-    int64_t errorLine, errorCol;
-    cursor_location(&errorLine, &errorCol);
-    m_error->set_line_and_column(errorLine, errorCol);
+      int64_t errorLine, errorCol;
+      cursor_location(&errorLine, &errorCol);
+      m_error->set_line_and_column(errorLine, errorCol);
+    }
+    else
+      m_error = new Error("", 0, errorMessage);
   }
 
 
@@ -8132,7 +8136,7 @@ namespace minipbrt {
     {
        int_param("xresolution", &pbrtv4Film->xresolution);
        int_param("yresolution", &pbrtv4Film->yresolution);
-       float_array_param("cropwindow", ParamType::Float, 4, pbrtv4Film->cropwwindow);
+       float_array_param("cropwindow", ParamType::Float, 4, pbrtv4Film->cropwindow);
        int_array_param("pixelbounds", 4, pbrtv4Film->pixelbounds);
        float_param("diagonal", &pbrtv4Film->diagonal);
        string_param("filename", &pbrtv4Film->filename, true);
@@ -8150,7 +8154,7 @@ namespace minipbrt {
            ImageFilm* img = new ImageFilm();
            int_param("xresolution", &img->xresolution);
            int_param("yresolution", &img->yresolution);
-           float_array_param("cropwindow", ParamType::Float, 4, img->cropwwindow);
+           float_array_param("cropwindow", ParamType::Float, 4, img->cropwindow);
            float_param("scale", &img->scale);
            float_param("maxsampleluminance", &img->maxsampleluminance);
            float_param("diagonal", &img->diagonal);
@@ -9293,7 +9297,7 @@ namespace minipbrt {
     return true;
   }
 
-  bool Parser::spd_enum_string_param(const char* name, char** dest, bool copy)
+  bool Parser::spd_enum_string_param(const char* name, const char** dest, bool copy)
   {
     assert(name != nullptr);
     assert(dest != nullptr);
@@ -9312,7 +9316,7 @@ namespace minipbrt {
   }
 
 
-  bool Parser::spd_enum_string_param_with_default(const char* name, char** dest, const char* defaultVal, bool copy)
+  bool Parser::spd_enum_string_param_with_default(const char* name, const char** dest, const char* defaultVal, bool copy)
   {
     if (spd_enum_string_param(name, dest, copy)) {
       return true;

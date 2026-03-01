@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 MIT License
 
@@ -147,7 +149,7 @@ namespace minipbrt {
   struct ColorTex {
     uint32_t texture;
     float value[3];
-    char* spdEnum; // PBRT v4
+    const char* spdEnum; // PBRT v4
   };
 
 
@@ -367,7 +369,7 @@ namespace minipbrt {
   struct ImageFilm : public Film {
     int xresolution           = 640;
     int yresolution           = 480;
-    float cropwwindow[4]      = { 0.0f, 1.0f, 0.0f, 1.0f };
+    float cropwindow[4]      = { 0.0f, 1.0f, 0.0f, 1.0f };
     float scale               = 1.0f;
     float maxsampleluminance  = std::numeric_limits<float>::infinity();
     float diagonal            = 35.0f; // in millimetres
@@ -382,7 +384,7 @@ namespace minipbrt {
   struct PBRTv4Film : public Film { // PBRT v4
     int xresolution           = 640;
     int yresolution           = 480;
-    float cropwwindow[4]      = { 0.0f, 1.0f, 0.0f, 1.0f };
+    float cropwindow[4]      = { 0.0f, 1.0f, 0.0f, 1.0f };
     int pixelbounds[4]        = { 0, 640, 0, 480 };
     float diagonal            = 35.0f; // in millimetres
     char* filename            = nullptr; // name of the output image.

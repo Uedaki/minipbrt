@@ -7839,7 +7839,7 @@ namespace minipbrt {
     case TextureType::ImageMap:
       {
         ImageMapTexture* imagemap = new ImageMapTexture();
-        if (!string_param("filename", &imagemap->filename, true)) {
+        if (!filename_param("filename", &imagemap->filename)) {
           m_tokenizer.set_error("Required parameter \"filename\" is missing");
           delete imagemap;
           return false;

@@ -1054,41 +1054,95 @@ namespace minipbrt {
   //
 
   enum class MediumType {
+    Cloud,
     Homogeneous,
-    Heterogeneous,
+    Nanovdb,
+    RgbGrid,
+
+    // Same medium
+    UniformGrid,
+    Heterogeneous
   };
 
 
   struct Medium {
     const char* mediumName  = nullptr;
 
-    float sigma_a[3]  = { 0.0011f, 0.0024f, 0.0014f };
-    float sigma_s[3]  = { 2.55f, 3.21f, 3.77f};
-    char* preset      = nullptr;
-    float g           = 0.0f;
-    float scale       = 1.0f;
-
     virtual ~Medium() {}
     virtual MediumType type() const = 0;
   };
 
-
   struct HomogeneousMedium : public Medium {
+    float g = 0.0f;
+    float Le[3] = { 0.f, 0.f, 0.f };
+    float Lescale = 1.f;
+    char* preset = nullptr;
+    float sigma_a[3] = { 1.0f, 1.0f, 1.0f };
+    float sigma_s[3] = { 1.0f, 1.0f, 1.0f };
+    float scale = 1.0f;
+
     virtual ~HomogeneousMedium() override {}
     virtual MediumType type() const override { return MediumType::Homogeneous; }
   };
 
-
-  struct HeterogeneousMedium : public Medium {
-    float p0[3]    = { 0.0f, 0.0f, 0.0f };
-    float p1[3]    = { 1.0f, 1.0f, 1.0f };
-    int nx         = 1;
-    int ny         = 1;
-    int nz         = 1;
+  struct UniformGridMedium : public HomogeneousMedium {
     float* density = nullptr;
+    float p0[3] = { 0.0f, 0.0f, 0.0f };
+    float p1[3] = { 1.0f, 1.0f, 1.0f };
+    int nx = 1;
+    int ny = 1;
+    int nz = 1;
+    float* temperature = nullptr;
+    float temperatureOffset = 0.0f;
+    float temperatureScale = 1.f;
 
-    virtual ~HeterogeneousMedium() override {}
-    virtual MediumType type() const override { return MediumType::Heterogeneous; }
+    virtual ~UniformGridMedium() override {}
+    virtual MediumType type() const override { return MediumType::UniformGrid; }
+  };
+
+  struct RgbGridMedium : public Medium {
+    float g = 0.0f;
+    float* Le = nullptr;
+    float Lescale = 1.f;
+    int nx = 1;
+    int ny = 1;
+    int nz = 1;
+    float p0[3] = { 0.0f, 0.0f, 0.0f };
+    float p1[3] = { 1.0f, 1.0f, 1.0f };
+    float* sigma_a = nullptr;
+    float* sigma_s = nullptr;
+    float scale = 1.0f;
+
+    virtual ~RgbGridMedium() override {}
+    virtual MediumType type() const override { return MediumType::RgbGrid; }
+  };
+
+  struct CloudMedium : public Medium {
+    float density = 1.0f;
+    float frequency = 5.0f;
+    float g = 0.0f;
+    float p0[3] = { 0.0f, 0.0f, 0.0f };
+    float p1[3] = { 1.0f, 1.0f, 1.0f };
+    float sigma_a[3] = { 1.0f, 1.0f, 1.0f };
+    float sigma_s[3] = { 1.0f, 1.0f, 1.0f };
+    float wispiness = 1.0f;
+
+    virtual ~CloudMedium() override {}
+    virtual MediumType type() const override { return MediumType::Cloud; }
+  };
+
+  struct NanoVDBMedium : public Medium {
+    float g = 0.0f;
+    float Lescale = 1.f;
+    float sigma_a[3] = { 1.0f, 1.0f, 1.0f };
+    float sigma_s[3] = { 1.0f, 1.0f, 1.0f };
+    float scale = 1.0f;
+    char* filename = nullptr;
+    float temperatureOffset = 0.0f;
+    float temperatureScale = 1.0f;
+
+    virtual ~NanoVDBMedium() override {}
+    virtual MediumType type() const override { return MediumType::Nanovdb; }
   };
 
 
